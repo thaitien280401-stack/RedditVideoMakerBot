@@ -1,0 +1,46 @@
+Starting install...
+STDOUT:
+Requirement already satisfied: gTTS in .\venv\lib\site-packages (2.5.4)
+Requirement already satisfied: rich in .\venv\lib\site-packages (14.3.3)
+Requirement already satisfied: Pillow in .\venv\lib\site-packages (12.2.0)
+Requirement already satisfied: requests in .\venv\lib\site-packages (2.33.1)
+Requirement already satisfied: click<8.2,>=7.1 in .\venv\lib\site-packages (from gTTS) (8.1.8)
+Requirement already satisfied: charset_normalizer<4,>=2 in .\venv\lib\site-packages (from requests) (3.4.7)
+Requirement already satisfied: idna<4,>=2.5 in .\venv\lib\site-packages (from requests) (3.11)
+Requirement already satisfied: urllib3<3,>=1.26 in .\venv\lib\site-packages (from requests) (2.6.3)
+Requirement already satisfied: certifi>=2023.5.7 in .\venv\lib\site-packages (from requests) (2026.2.25)
+Requirement already satisfied: colorama in .\venv\lib\site-packages (from click<8.2,>=7.1->gTTS) (0.4.6)
+Requirement already satisfied: markdown-it-py>=2.2.0 in .\venv\lib\site-packages (from rich) (4.0.0)
+Requirement already satisfied: pygments<3.0.0,>=2.13.0 in .\venv\lib\site-packages (from rich) (2.20.0)
+Requirement already satisfied: mdurl~=0.1 in .\venv\lib\site-packages (from markdown-it-py>=2.2.0->rich) (0.1.2)
+
+STDERR:
+
+Return code: 0
+
+PIP LIST:
+Package            Version
+------------------ ---------
+certifi            2026.2.25
+charset-normalizer 3.4.7
+click              8.1.8
+colorama           0.4.6
+gTTS               2.5.4
+idna               3.11
+markdown-it-py     4.0.0
+mdurl              0.1.2
+pillow             12.2.0
+pip                26.0.1
+praw               7.8.1
+prawcore           2.4.0
+Pygments           2.20.0
+requests           2.33.1
+rich               14.3.3
+setuptools         65.5.0
+toml               0.10.2
+tomlkit            0.14.0
+update-checker     0.18.0
+urllib3            2.6.3
+websocket-client   1.9.0
+
+DONE

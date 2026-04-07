@@ -16,13 +16,138 @@ from utils.videos import save_data
 __all__ = ["get_screenshots_of_reddit_posts"]
 
 
+def _is_non_reddit_source() -> bool:
+    """Check if the content source is NOT reddit."""
+    source = settings.config.get("settings", {}).get("content_source", "reddit").lower()
+    return source in ("threads", "instagram", "manual")
+
+
+def _generate_comment_images(reddit_object: dict, screenshot_num: int):
+    """Generate images for comments from non-Reddit sources (Threads/Instagram/Manual).
+    Uses the imagemaker approach similar to story mode.
+    """
+    import os
+    from PIL import Image, ImageDraw, ImageFont
+    from TTS.engine_wrapper import process_text
+    from utils.fonts import getheight, getsize
+    
+    W: Final[int] = int(settings.config["settings"]["resolution_w"])
+    H: Final[int] = int(settings.config["settings"]["resolution_h"])
+    
+    reddit_id = re.sub(r"[^\w\s-]", "", reddit_object["thread_id"])
+    Path(f"assets/temp/{reddit_id}/png").mkdir(parents=True, exist_ok=True)
+    
+    theme = settings.config["settings"]["theme"]
+    if theme == "dark":
+        bgcolor = (33, 33, 36, 255)
+        txtcolor = (240, 240, 240)
+    elif theme == "transparent":
+        bgcolor = (0, 0, 0, 0)
+        txtcolor = (255, 255, 255)
+    else:
+        bgcolor = (255, 255, 255, 255)
+        txtcolor = (0, 0, 0)
+    
+    font_path = os.path.join("fonts", "Roboto-Bold.ttf")
+    if not os.path.exists(font_path):
+        font_path = os.path.join("fonts", "Roboto-Regular.ttf")
+    
+    import textwrap
+    
+    def _create_text_image(text, filepath, is_title=False):
+        """Create an image with text rendered on it."""
+        font_size = 60 if is_title else 48
+        font = ImageFont.truetype(font_path, font_size)
+        
+        # Calculate text wrapping
+        max_chars_per_line = 35 if is_title else 40
+        lines = textwrap.wrap(text, width=max_chars_per_line)
+        
+        # Calculate image dimensions
+        padding = 40
+        line_height = font_size + 10
+        img_height = len(lines) * line_height + padding * 2
+        img_width = int(W * 0.85)
+        
+        image = Image.new("RGBA", (img_width, max(img_height, 100)), bgcolor)
+        draw = ImageDraw.Draw(image)
+        
+        y = padding
+        for line in lines:
+            _, _, text_w, text_h = draw.textbbox((0, 0), line, font=font)
+            x = (img_width - text_w) // 2
+            
+            # Add shadow for transparent mode
+            if theme == "transparent":
+                for dx in range(-2, 3):
+                    for dy in range(-2, 3):
+                        draw.text((x + dx, y + dy), line, font=font, fill="black")
+            
+            draw.text((x, y), line, font=font, fill=txtcolor)
+            y += line_height
+        
+        image.save(filepath)
+    
+    # Generate title image
+    title_text = reddit_object.get("thread_title", "")
+    lang = settings.config.get("reddit", {}).get("thread", {}).get("post_lang", "")
+    if lang and title_text:
+        try:
+            title_text = translators.translate_text(title_text, to_language=lang, translator="google")
+        except:
+            pass
+    
+    _create_text_image(title_text, f"assets/temp/{reddit_id}/png/title.png", is_title=True)
+    
+    storymode = settings.config["settings"]["storymode"]
+    
+    if storymode:
+        # Story mode: generate images from post text
+        if settings.config["settings"]["storymodemethod"] == 1:
+            texts = reddit_object.get("thread_post", [])
+            if isinstance(texts, str):
+                texts = [texts]
+            for idx, text in enumerate(texts):
+                if lang:
+                    try:
+                        text = translators.translate_text(text, to_language=lang, translator="google")
+                    except:
+                        pass
+                _create_text_image(text, f"assets/temp/{reddit_id}/png/img{idx}.png")
+        else:
+            post_text = reddit_object.get("thread_post", "")
+            if isinstance(post_text, list):
+                post_text = " ".join(post_text)
+            if lang:
+                try:
+                    post_text = translators.translate_text(post_text, to_language=lang, translator="google")
+                except:
+                    pass
+            _create_text_image(post_text, f"assets/temp/{reddit_id}/png/story_content.png")
+    else:
+        # Comment mode: generate image for each comment
+        for idx, comment in enumerate(reddit_object.get("comments", [])[:screenshot_num]):
+            comment_text = comment.get("comment_body", "")
+            if lang:
+                try:
+                    comment_text = translators.translate_text(comment_text, to_language=lang, translator="google")
+                except:
+                    pass
+            _create_text_image(comment_text, f"assets/temp/{reddit_id}/png/comment_{idx}.png")
+
+
 def get_screenshots_of_reddit_posts(reddit_object: dict, screenshot_num: int):
     """Downloads screenshots of reddit posts as seen on the web. Downloads to assets/temp/png
+    For non-Reddit sources, generates text images instead.
 
     Args:
-        reddit_object (Dict): Reddit object received from reddit/subreddit.py
+        reddit_object (Dict): Reddit object received from reddit/subreddit.py or other sources
         screenshot_num (int): Number of screenshots to download
     """
+    # For non-Reddit sources, generate images instead of screenshotting
+    if _is_non_reddit_source():
+        print_step("Generating images for content...")
+        return _generate_comment_images(reddit_object, screenshot_num)
     # settings values
     W: Final[int] = int(settings.config["settings"]["resolution_w"])
     H: Final[int] = int(settings.config["settings"]["resolution_h"])

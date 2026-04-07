@@ -6,9 +6,6 @@ from pathlib import Path
 from subprocess import Popen
 from typing import Dict, NoReturn
 
-from prawcore import ResponseException
-
-from reddit.subreddit import get_subreddit_threads
 from utils import settings
 from utils.cleanup import cleanup
 from utils.console import print_markdown, print_step, print_substep
@@ -46,9 +43,36 @@ reddit_id: str
 reddit_object: Dict[str, str | list]
 
 
+def get_content_source(POST_ID=None) -> dict:
+    """Get content from the configured source (reddit, threads, instagram, or manual)."""
+    source = settings.config.get("settings", {}).get("content_source", "reddit").lower()
+    
+    if source == "threads":
+        from sources.threads_source import get_threads_posts
+        post_url = None
+        if POST_ID:
+            post_url = POST_ID
+        return get_threads_posts(post_url)
+    
+    elif source == "instagram":
+        from sources.instagram_source import get_instagram_posts
+        post_url = None
+        if POST_ID:
+            post_url = POST_ID
+        return get_instagram_posts(post_url)
+    
+    elif source == "manual":
+        from sources.threads_source import _manual_input_mode
+        return _manual_input_mode()
+    
+    else:  # Default: reddit
+        from reddit.subreddit import get_subreddit_threads
+        return get_subreddit_threads(POST_ID)
+
+
 def main(POST_ID=None) -> None:
     global reddit_id, reddit_object
-    reddit_object = get_subreddit_threads(POST_ID)
+    reddit_object = get_content_source(POST_ID)
     reddit_id = extract_id(reddit_object)
     print_substep(f"Thread ID is {reddit_id}", style="bold blue")
     length, number_of_comments = save_text_to_mp3(reddit_object)
@@ -104,26 +128,49 @@ if __name__ == "__main__":
             "bold red",
         )
         sys.exit()
+    
+    content_source = config.get("settings", {}).get("content_source", "reddit").lower()
+    
     try:
-        if config["reddit"]["thread"]["post_id"]:
-            for index, post_id in enumerate(config["reddit"]["thread"]["post_id"].split("+")):
-                index += 1
-                print_step(
-                    f'on the {index}{("st" if index % 10 == 1 else ("nd" if index % 10 == 2 else ("rd" if index % 10 == 3 else "th")))} post of {len(config["reddit"]["thread"]["post_id"].split("+"))}'
-                )
-                main(post_id)
-                Popen("cls" if name == "nt" else "clear", shell=True).wait()
-        elif config["settings"]["times_to_run"]:
-            run_many(config["settings"]["times_to_run"])
+        if content_source in ("threads", "instagram", "manual"):
+            # For non-Reddit sources: use post URLs or run directly
+            source_config = config.get(content_source, config.get("threads", {}))
+            post_urls = ""
+            if source_config and "thread" in source_config:
+                post_urls = source_config.get("thread", {}).get("post_url", "")
+            
+            if post_urls and "+" in str(post_urls):
+                for index, url in enumerate(post_urls.split("+"), 1):
+                    print_step(f"Processing post {index}...")
+                    main(url.strip())
+                    Popen("cls" if name == "nt" else "clear", shell=True).wait()
+            elif config["settings"]["times_to_run"]:
+                run_many(config["settings"]["times_to_run"])
+            else:
+                main(post_urls if post_urls else None)
         else:
-            main()
+            # Reddit mode (original behavior)
+            from prawcore import ResponseException as _RE
+            if config["reddit"]["thread"]["post_id"]:
+                for index, post_id in enumerate(config["reddit"]["thread"]["post_id"].split("+")):
+                    index += 1
+                    print_step(
+                        f'on the {index}{("st" if index % 10 == 1 else ("nd" if index % 10 == 2 else ("rd" if index % 10 == 3 else "th")))} post of {len(config["reddit"]["thread"]["post_id"].split("+"))}'
+                    )
+                    main(post_id)
+                    Popen("cls" if name == "nt" else "clear", shell=True).wait()
+            elif config["settings"]["times_to_run"]:
+                run_many(config["settings"]["times_to_run"])
+            else:
+                main()
     except KeyboardInterrupt:
         shutdown()
-    except ResponseException:
-        print_markdown("## Invalid credentials")
-        print_markdown("Please check your credentials in the config.toml file")
-        shutdown()
     except Exception as err:
+        # Handle Reddit-specific errors gracefully
+        if "ResponseException" in type(err).__name__:
+            print_markdown("## Invalid credentials")
+            print_markdown("Please check your credentials in the config.toml file")
+            shutdown()
         config["settings"]["tts"]["tiktok_sessionid"] = "REDACTED"
         config["settings"]["tts"]["elevenlabs_api_key"] = "REDACTED"
         config["settings"]["tts"]["openai_api_key"] = "REDACTED"

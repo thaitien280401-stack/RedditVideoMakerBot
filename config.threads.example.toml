@@ -1,0 +1,92 @@
+# ============================================================
+# CONFIG MẪU CHO THREADS / INSTAGRAM (KHÔNG CẦN REDDIT)
+# Copy file này thành config.toml và chỉnh sửa theo ý bạn
+# ============================================================
+
+[reddit.creds]
+# Để trống nếu dùng Threads/Instagram
+client_id = ""
+client_secret = ""
+username = ""
+password = ""
+2fa = false
+
+[reddit.thread]
+random = false
+subreddit = "AskReddit"
+post_id = ""
+max_comment_length = 500
+min_comment_length = 1
+# QUAN TRỌNG: Set "vi" để dịch sang tiếng Việt
+post_lang = "vi"
+min_comments = 20
+blocked_words = ""
+
+[ai]
+ai_similarity_enabled = false
+ai_similarity_keywords = ""
+
+[settings]
+# ============ CHỌN NGUỒN NỘI DUNG ============
+# "reddit"    = Lấy từ Reddit (cần Reddit credentials)
+# "threads"   = Lấy từ Meta Threads
+# "instagram" = Lấy từ Instagram
+# "manual"    = Nhập nội dung thủ công
+content_source = "threads"
+
+allow_nsfw = false
+theme = "dark"
+times_to_run = 1
+opacity = 0.9
+storymode = false
+storymodemethod = 1
+storymode_max_length = 1000
+resolution_w = 1080
+resolution_h = 1920
+zoom = 1
+channel_name = "Story Việt"
+
+[settings.background]
+background_video = "minecraft"
+background_audio = "lofi"
+background_audio_volume = 0.1
+enable_extra_audio = false
+background_thumbnail = false
+background_thumbnail_font_family = "arial"
+background_thumbnail_font_size = 96
+background_thumbnail_font_color = "255,255,255"
+
+[settings.tts]
+# Dùng googletranslate cho tiếng Việt (miễn phí)
+voice_choice = "googletranslate"
+random_voice = false
+elevenlabs_voice_name = "Bella"
+elevenlabs_api_key = ""
+aws_polly_voice = "Matthew"
+streamlabs_polly_voice = "Matthew"
+tiktok_voice = "en_us_001"
+tiktok_sessionid = ""
+python_voice = "1"
+py_voice_num = "2"
+silence_duration = 0.3
+no_emojis = true
+openai_api_url = "https://api.openai.com/v1/"
+openai_api_key = ""
+openai_voice_name = "nova"
+openai_model = "tts-1"
+
+# ============ CẤU HÌNH THREADS ============
+[threads.thread]
+# URL cụ thể của một Threads post (để trống nếu muốn search)
+post_url = ""
+# Từ khóa tìm kiếm trên Threads
+search_query = "funny stories"
+# Số replies tối đa
+max_comments = 10
+
+# ============ CẤU HÌNH INSTAGRAM ============
+[instagram.thread]
+# URL của Instagram post/reel
+post_url = ""
+# Số comments tối đa
+max_comments = 10
